@@ -13,19 +13,43 @@ const addProduct = async (req, res) => {
       sizes,
       bestSeller,
     } = req.body;
-    //   get the images
-    const image2 = req.files.image2 && req.files.image2[0];
-    const image1 = req.files.image1 && req.files.image1[0];
-    const image3 = req.files.image3 && req.files.image3[0];
-    const image4 = req.files.image4 && req.files.image4[0];
 
-    const images = [image1, image2, image3, image4].filter(
-      (item) => item !== undefined,
-    );
+    //Validate required fields
+    if (!name || !description || !price) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing",
+      });
+    }
 
-    let imagesUrl = await Promise.all(
+    const numericPrice = Number(price);
+
+    if (isNaN(numericPrice)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid price value",
+      });
+    }
+
+    //  image extraction
+    const image1 = req.files?.image1?.[0];
+    const image2 = req.files?.image2?.[0];
+    const image3 = req.files?.image3?.[0];
+    const image4 = req.files?.image4?.[0];
+
+    const images = [image1, image2, image3, image4].filter(Boolean);
+
+    if (images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one image is required",
+      });
+    }
+
+    //  Upload to Cloudinary
+    const imagesUrl = await Promise.all(
       images.map(async (item) => {
-        let result = await cloudinary.uploader.upload(item.path, {
+        const result = await cloudinary.uploader.upload(item.path, {
           resource_type: "image",
         });
         return result.secure_url;
@@ -35,24 +59,29 @@ const addProduct = async (req, res) => {
     const productData = {
       name,
       description,
-      price: Number(price),
+      price: numericPrice,
       category,
       subCategory,
-      sizes: JSON.parse(sizes),
-      bestSeller: bestSeller === "true" ? true : false,
+      sizes: sizes ? JSON.parse(sizes) : [],
+      bestSeller: bestSeller === "true",
       image: imagesUrl,
       date: Date.now(),
     };
-    console.log(productData);
 
     const product = new productModel(productData);
     await product.save();
 
-    res.json({ success: true, message: "Product added successfully." });
+    res.status(201).json({
+      success: true,
+      message: "Product added successfully",
+      product,
+    });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
-    res.status(500).send("Internal server error ");
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
