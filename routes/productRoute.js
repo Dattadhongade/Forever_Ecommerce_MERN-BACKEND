@@ -12,7 +12,7 @@ const productRouter = express.Router();
 
 productRouter.post(
   "/add",
-  adminAuth,
+  adminAuth, // middleware
   upload.fields([
     { name: "image1", maxCount: 1 },
     { name: "image2", maxCount: 1 },

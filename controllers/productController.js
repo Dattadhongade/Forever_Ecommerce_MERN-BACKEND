@@ -88,7 +88,7 @@ const addProduct = async (req, res) => {
 // ==============  Product list (get) function =================== //
 const listProduct = async (req, res) => {
   try {
-    const products = await productModel.find({});
+    const products = await productModel.find({}).sort({ date: -1 });
     res.json({ success: true, products });
   } catch (error) {
     console.log(error);
@@ -107,7 +107,7 @@ const removeProduct = async (req, res) => {
     product = await productModel.findByIdAndDelete(req.params.id);
     res.json({
       success: true,
-      message: "Product hass been deleted",
+      message: "Product hass been deleted.",
       product: product,
     });
   } catch (error) {
